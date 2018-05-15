@@ -13,6 +13,24 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 var exports = module.exports = {};
 
+var messages = {results:[]};
+
+// These headers will allow Cross-Origin Resource Sharing (CORS).
+// This code allows this server to talk to websites that
+// are on different domains, for instance, your chat client.
+//
+// Your chat client is running from a url like file://your/chat/client/index.html,
+// which is considered a different domain.
+//
+// Another way to get around this restriction is to serve you chat
+// client from this domain by setting up static file serving.
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
+
 exports.requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -44,52 +62,58 @@ exports.requestHandler = function(request, response) {
   if (request.method==='GET' && request.url === '/classes/messages') {
     headers['Content-Type'] = 'application/json';
 
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
+    // .writeHead() writes to the request line and headers of the response,
+    // which includes the status and all headers.
     response.writeHead(statusCode, headers);
 
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
+    // Make sure to always call response.end() - Node may not send
+    // anything back to the client until you do. The string you pass to
+    // response.end() will be the body of the response - i.e. what shows
+    // up in the browser.
+    //
+    // Calling .end "flushes" the response's internal buffer, forcing
+    // node to actually send all the data over to the client.
 
     ///console.log('-------------------->'+response)
 
-
-
-    response.end(JSON.stringify({results:[]}));
+    response.end(JSON.stringify(messages));
     //console.log(response._data)
     //console.log(response)
   }
   
-   if (request.method ==='POST' && request.url === '/classes/messages') {
+  if (request.method ==='POST' && request.url === '/classes/messages') {
     headers['Content-Type'] = 'application/json';
    
+    
+    
+    // var postHTML = 
+    //   '<html><head><title>Post Example</title></head>' +
+    //   '<body>' +
+    //   '<form method="post">' +
+    //   'Input 1: <input name="input1"><br>' +
+    //   'Input 2: <input name="input2"><br>' +
+    //   '<input type="submit">' +
+    //   '</form>' +
+    //   '</body></html>';
     response.writeHead(201, headers);
-    response.end(JSON.stringify(request._postData));
-    var messages = JSON.parse(body)
-    console.log(messages)
-   // console.log(request._postData)
-  }
-  
-};
+    var body = '';
+    request.on('data',function(chunk) {
+      body += chunk;
+    });
+    request.on('end', function() {
+      console.log('POSTed: ' + body);
+      messages.results.push(JSON.parse(body));
+      response.end(JSON.stringify(messages.results));
+    });
 
-// These headers will allow Cross-Origin Resource Sharing (CORS).
-// This code allows this server to talk to websites that
-// are on different domains, for instance, your chat client.
-//
-// Your chat client is running from a url like file://your/chat/client/index.html,
-// which is considered a different domain.
-//
-// Another way to get around this restriction is to serve you chat
-// client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
+    // messages.results.push(request._postData);
+    // response.end(JSON.stringify(messages.results));
+    // console.log(messages.results)
+  }
+
+  if(request.url !== '/classes/messages') {
+    response.writeHead(404, headers);
+    response.end();
+  } 
 };
 
