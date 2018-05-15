@@ -50,7 +50,9 @@ exports.requestHandler = function(request, response) {
 
   // The outgoing status.
   var statusCode = 200;
-
+  var successPostCode = 201;
+  var errorCode = 404;
+  
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
 
@@ -74,8 +76,6 @@ exports.requestHandler = function(request, response) {
     // Calling .end "flushes" the response's internal buffer, forcing
     // node to actually send all the data over to the client.
 
-    ///console.log('-------------------->'+response)
-
     response.end(JSON.stringify(messages));
     //console.log(response._data)
     //console.log(response)
@@ -84,18 +84,7 @@ exports.requestHandler = function(request, response) {
   if (request.method ==='POST' && request.url === '/classes/messages') {
     headers['Content-Type'] = 'application/json';
    
-    
-    
-    // var postHTML = 
-    //   '<html><head><title>Post Example</title></head>' +
-    //   '<body>' +
-    //   '<form method="post">' +
-    //   'Input 1: <input name="input1"><br>' +
-    //   'Input 2: <input name="input2"><br>' +
-    //   '<input type="submit">' +
-    //   '</form>' +
-    //   '</body></html>';
-    response.writeHead(201, headers);
+    response.writeHead(successPostCode, headers);
     var body = '';
     request.on('data',function(chunk) {
       body += chunk;
@@ -110,9 +99,19 @@ exports.requestHandler = function(request, response) {
     // response.end(JSON.stringify(messages.results));
     // console.log(messages.results)
   }
+  
+  if (request.method ==='OPTIONS' && request.url === '/classes/messages') {
+    headers['Content-Type'] = 'application/json';
+   
+    response.writeHead(statusCode, headers);
+    response.end();
+  }
+
+  
 
   if(request.url !== '/classes/messages') {
-    response.writeHead(404, headers);
+    
+    response.writeHead(errorCode, headers);
     response.end();
   } 
 };
